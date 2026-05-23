@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "dashboards": {
+      "dashboards": "داشبوردها",
+      "home": "خانه",
+      "users": "کاربران",
+      "logs": "لاگ‌ها",
+      "categories": "دسته‌بندی‌ها",
+      "collections": "کالکشن‌ها",
+      "tags": "تگ‌ها",
+      "brands": "برندها",
+      "attributes": "ویژگی‌ها"
+    },
+    "settings": {
+      "settings": "تنظیمات",
+      "general": "عمومی",
+      "appearance": "ظاهر"
+    }
+  }
+}
