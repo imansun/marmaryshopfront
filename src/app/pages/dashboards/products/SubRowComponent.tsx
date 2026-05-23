@@ -7,8 +7,30 @@ import type { Row } from "@tanstack/react-table";
 import { Table, Tag, TBody, THead, Th, Tr, Td, Badge } from "@/components/ui";
 import { formatDollarToToman } from "@/utils";
 import type { ProductItem } from "@/app/services/endpoints/products";
+import { JWT_HOST_API } from "@/configs/auth";
 
 // ----------------------------------------------------------------------
+
+const resolveProductImageUrl = (value?: string | null) => {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/")) {
+    return `${JWT_HOST_API}${trimmed}`;
+  }
+
+  return `${JWT_HOST_API}/${trimmed}`;
+};
 
 const cols = ["عنوان", "شناسه", "برند", "دسته‌بندی", "قیمت پایه", "وضعیت"];
 
@@ -36,11 +58,13 @@ export function SubRowComponent({
   const statusLabel = isActive ? "فعال" : "غیرفعال";
   const statusColor: "success" | "error" = isActive ? "success" : "error";
 
-  const imageUrl =
+  const rawImageUrl =
     product.imageUrl ||
     (Array.isArray(product.images)
       ? product.images.find((image) => image?.imageUrl)?.imageUrl ?? ""
       : "");
+
+  const imageUrl = resolveProductImageUrl(rawImageUrl);
 
   const title = product.title ?? "—";
   const brand =
