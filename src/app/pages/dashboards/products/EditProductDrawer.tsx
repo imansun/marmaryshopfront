@@ -39,6 +39,9 @@ import {
   type CategoryItem,
 } from "@/app/services/endpoints/categories";
 
+import { ProductImagesManager } from "./ProductImagesManager";
+import { ProductVariantsManager } from "./ProductVariantsManager";
+
 const modules = {
   toolbar: [
     ["bold", "italic", "underline", "strike"],
@@ -128,6 +131,8 @@ export function EditProductDrawer({
   const [filePondKey, setFilePondKey] = useState(0);
 
   const [isActive, setIsActive] = useState(true);
+  const [showImagesManager, setShowImagesManager] = useState(false);
+  const [showVariantsManager, setShowVariantsManager] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -186,6 +191,10 @@ export function EditProductDrawer({
         }
 
         setIsActive(productData.isActive ?? true);
+        
+        // Show images and variants managers when editing
+        setShowImagesManager(true);
+        setShowVariantsManager(true);
       } catch {
         // Error loading product
       } finally {
@@ -217,6 +226,8 @@ export function EditProductDrawer({
     setImage(undefined);
     setFilePondKey((prev) => prev + 1);
     setIsActive(true);
+    setShowImagesManager(false);
+    setShowVariantsManager(false);
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -281,6 +292,16 @@ export function EditProductDrawer({
       setIsSubmitting(false);
     }
   };
+
+  const handleImagesChange = useCallback((images: any[]) => {
+    // Update product images in parent component if needed
+    console.log('Images changed:', images);
+  }, []);
+
+  const handleVariantsChange = useCallback((variants: any[]) => {
+    // Update product variants in parent component if needed
+    console.log('Variants changed:', variants);
+  }, []);
 
   if (!product) return null;
 
@@ -478,6 +499,24 @@ export function EditProductDrawer({
                       />
                     </div>
                   </div>
+
+                  {showImagesManager && product && (
+                    <div className="md:col-span-2">
+                      <ProductImagesManager
+                        product={product}
+                        onImagesChange={handleImagesChange}
+                      />
+                    </div>
+                  )}
+
+                  {showVariantsManager && product && (
+                    <div className="md:col-span-2">
+                      <ProductVariantsManager
+                        product={product}
+                        onVariantsChange={handleVariantsChange}
+                      />
+                    </div>
+                  )}
 
                   <div className="md:col-span-2">
                     <Textarea
