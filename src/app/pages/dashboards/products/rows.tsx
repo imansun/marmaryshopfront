@@ -23,8 +23,30 @@ import { useLocaleContext } from "@/app/contexts/locale/context";
 import { ensureString } from "@/utils/ensureString";
 import { formatDollarToToman } from "@/utils";
 import type { ProductItem } from "@/app/services/endpoints/products";
+import { JWT_HOST_API } from "@/configs/auth";
 
 // ----------------------------------------------------------------------
+
+const resolveProductImageUrl = (value?: string | null) => {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/")) {
+    return `${JWT_HOST_API}${trimmed}`;
+  }
+
+  return `${JWT_HOST_API}/${trimmed}`;
+};
 
 type ProductStatusOption = {
   value: boolean;
@@ -59,7 +81,7 @@ export function ProductImageCell({
   row,
 }: CellContext<ProductItem, unknown>) {
   const title = ensureString(row.original.title);
-  const imageUrl = row.original.imageUrl;
+  const imageUrl = resolveProductImageUrl(row.original.imageUrl);
 
   return (
     <div className="flex items-center">
@@ -130,7 +152,7 @@ export function TitleCell({
       <Avatar
         size={9}
         name={title}
-        src={row.original.imageUrl}
+        src={resolveProductImageUrl(row.original.imageUrl)}
         classNames={{
           display: "mask is-squircle rounded-none text-sm",
         }}

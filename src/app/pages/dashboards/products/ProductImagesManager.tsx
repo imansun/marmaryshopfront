@@ -11,10 +11,32 @@ import {
   setPrimaryProductImage,
   reorderProductImages,
 } from "@/app/services/endpoints/products";
+import { JWT_HOST_API } from "@/configs/auth";
 
 type ProductImagesManagerProps = {
   product: ProductItem;
   onImagesChange?: (images: ProductImage[]) => void;
+};
+
+const resolveProductImageUrl = (value?: string | null) => {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/")) {
+    return `${JWT_HOST_API}${trimmed}`;
+  }
+
+  return `${JWT_HOST_API}/${trimmed}`;
 };
 
 export function ProductImagesManager({
@@ -156,7 +178,7 @@ export function ProductImagesManager({
               className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-dark-600"
             >
               <img
-                src={image.imageUrl}
+                src={resolveProductImageUrl(image.imageUrl)}
                 alt={image.altText || "Product image"}
                 className="w-full h-full object-cover"
               />
