@@ -52,10 +52,13 @@ import { SelectedRowsActions } from "./SelectedRowsActions";
 import { SubRowComponent } from "./SubRowComponent";
 import { Toolbar } from "./Toolbar";
 import { CreateProductDrawer } from "./CreateProductDrawer";
+import { EditProductDrawer } from "./EditProductDrawer";
 
 import {
   deleteProduct,
   getProducts,
+  updateProduct,
+  restoreProduct,
   type ProductItem,
 } from "@/app/services/endpoints/products";
 
@@ -77,6 +80,11 @@ export default function ProductsDatatableV2() {
 
   const [isCreateProductOpen, createProductDrawerActions] =
     useDisclosure(false);
+
+  const [isEditProductOpen, editProductDrawerActions] =
+    useDisclosure(false);
+
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
 
   const [tableSettings, setTableSettings] = useLocalStorage<TableSettings>(
     "products-table-settings",
@@ -199,6 +207,19 @@ export default function ProductsDatatableV2() {
     [skipAutoResetPageIndex],
   );
 
+  const handleProductUpdated = useCallback(
+    (product: ProductItem) => {
+      skipAutoResetPageIndex();
+
+      setProducts((old) => {
+        return old.map((item) => (item.id === product.id ? product : item));
+      });
+
+      setRowSelection({});
+    },
+    [skipAutoResetPageIndex],
+  );
+
   const handleDeleteProduct = useCallback(
     async (product: ProductItem) => {
       try {
@@ -209,6 +230,26 @@ export default function ProductsDatatableV2() {
     },
     [skipAutoResetPageIndex],
   );
+
+  const handleRestoreProduct = useCallback(
+    async (product: ProductItem) => {
+      try {
+        await restoreProduct(product.id);
+        skipAutoResetPageIndex();
+        setProducts((old) =>
+          old.map((item) =>
+            item.id === product.id ? { ...item, deletedAt: null } : item,
+          ),
+        );
+      } catch {}
+    },
+    [skipAutoResetPageIndex],
+  );
+
+  const handleEditProduct = useCallback((product: ProductItem) => {
+    setEditingProduct(product);
+    editProductDrawerActions.open();
+  }, [editProductDrawerActions]);
 
   const handleDeleteSelectedProducts = useCallback(
     async (productsToDelete: ProductItem[]) => {
@@ -224,8 +265,6 @@ export default function ProductsDatatableV2() {
     },
     [skipAutoResetPageIndex],
   );
-
-  const handleEditProduct = useCallback((_product: ProductItem) => {}, []);
 
   const meta = useMemo<TableMeta<ProductItem>>(
     () => ({
@@ -568,6 +607,13 @@ export default function ProductsDatatableV2() {
         isOpen={isCreateProductOpen}
         onClose={createProductDrawerActions.close}
         onCreated={handleProductCreated}
+      />
+
+      <EditProductDrawer
+        isOpen={isEditProductOpen}
+        onClose={editProductDrawerActions.close}
+        product={editingProduct}
+        onUpdated={handleProductUpdated}
       />
     </>
   );
