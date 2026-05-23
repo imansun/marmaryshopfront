@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui";
-import { TrashIcon, PhotoIcon } from "@heroicons/react/24/outline";
-import type { ProductItem, ProductImage } from "@/app/services/endpoints/products";
+import { TrashIcon, PhotoIcon, ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import type { ProductItem, ProductImage, ReorderProductImagesPayload } from "@/app/services/endpoints/products";
 import {
   getProductImages,
   addProductImage,
@@ -24,6 +24,7 @@ export function ProductImagesManager({
   const [images, setImages] = useState<ProductImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
 
   const loadImages = useCallback(async () => {
     try {
@@ -88,6 +89,40 @@ export function ProductImagesManager({
     [product.id],
   );
 
+  const handleMoveImage = useCallback(
+    async (imageId: number, direction: "up" | "down") => {
+      const currentIndex = images.findIndex((img) => img.id === imageId);
+      if (currentIndex === -1) return;
+
+      const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= images.length) return;
+
+      const newImages = [...images];
+      const temp = newImages[currentIndex];
+      newImages[currentIndex] = newImages[newIndex];
+      newImages[newIndex] = temp;
+
+      setImages(newImages);
+
+      try {
+        setIsReordering(true);
+        const payload: ReorderProductImagesPayload = {
+          items: newImages.map((img, index) => ({
+            id: img.id,
+            sortOrder: index,
+          })),
+        };
+        await reorderProductImages(product.id, payload);
+        onImagesChange?.(newImages);
+      } catch {
+        setImages(images);
+      } finally {
+        setIsReordering(false);
+      }
+    },
+    [images, product.id, onImagesChange],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -132,26 +167,52 @@ export function ProductImagesManager({
                 </span>
               )}
 
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                {!image.isPrimary && (
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                <div className="flex items-center gap-1">
                   <Button
                     size="sm"
                     variant="flat"
-                    onClick={() => handleSetPrimary(image.id)}
+                    onClick={() => handleMoveImage(image.id, "up")}
+                    disabled={isReordering || images.indexOf(images.find(img => img.id === image.id)!) === 0}
+                    className="text-xs"
+                    title="انتقال به بالا"
+                  >
+                    <ArrowUpIcon className="size-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    onClick={() => handleMoveImage(image.id, "down")}
+                    disabled={isReordering || images.indexOf(images.find(img => img.id === image.id)!) === images.length - 1}
+                    className="text-xs"
+                    title="انتقال به پایین"
+                  >
+                    <ArrowDownIcon className="size-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-1">
+                  {!image.isPrimary && (
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onClick={() => handleSetPrimary(image.id)}
+                      disabled={isReordering}
+                      className="text-xs"
+                    >
+                      تنظیم به عنوان اصلی
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    color="error"
+                    variant="flat"
+                    onClick={() => handleDeleteImage(image.id)}
+                    disabled={isReordering}
                     className="text-xs"
                   >
-                    تنظیم به عنوان اصلی
+                    <TrashIcon className="size-4" />
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  color="error"
-                  variant="flat"
-                  onClick={() => handleDeleteImage(image.id)}
-                  className="text-xs"
-                >
-                  <TrashIcon className="size-4" />
-                </Button>
+                </div>
               </div>
             </div>
           ))}

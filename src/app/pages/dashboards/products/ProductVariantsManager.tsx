@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui";
-import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import type { ProductItem, ProductVariant } from "@/app/services/endpoints/products";
+import { PlusIcon, TrashIcon, PencilIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import type { ProductItem, ProductVariant, CreateProductImagePayload } from "@/app/services/endpoints/products";
 import {
   createProductVariant,
   updateProductVariant,
   deleteProductVariant,
+  addVariantImage,
+  getProductVariantById,
 } from "@/app/services/endpoints/products";
 
 type ProductVariantsManagerProps = {
@@ -31,6 +33,7 @@ export function ProductVariantsManager({
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<VariantForm>({});
+  const [uploadingVariantId, setUploadingVariantId] = useState<number | null>(null);
 
   const handleCreateVariant = useCallback(async () => {
     try {
@@ -100,6 +103,40 @@ export function ProductVariantsManager({
       isActive: variant.isActive ?? true,
     });
   }, []);
+
+  const handleLoadVariant = useCallback(
+    async (variantId: number) => {
+      try {
+        const variantData = await getProductVariantById(product.id, variantId);
+        setVariants((prev) =>
+          prev.map((v) => (v.id === variantId ? variantData : v)),
+        );
+      } catch {
+        // Error handling
+      }
+    },
+    [product.id],
+  );
+
+  const handleUploadVariantImage = useCallback(
+    async (variantId: number, file: File) => {
+      try {
+        setUploadingVariantId(variantId);
+        const payload: CreateProductImagePayload = {
+          image: file,
+          altText: file.name,
+          isPrimary: false,
+        };
+        await addVariantImage(product.id, variantId, payload);
+        handleLoadVariant(variantId);
+      } catch {
+        // Error handling
+      } finally {
+        setUploadingVariantId(null);
+      }
+    },
+    [product.id, handleLoadVariant],
+  );
 
   return (
     <div className="space-y-4">
@@ -191,23 +228,54 @@ export function ProductVariantsManager({
                       {variant.price ? `${variant.price.toLocaleString()} تومان` : "—"} | موجودی:{" "}
                       {variant.stock ?? "—"}
                     </p>
+                    {variant.images && variant.images.length > 0 && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        تعداد تصاویر: {variant.images.length}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      onClick={() => startEdit(variant)}
-                    >
-                      <PencilIcon className="size-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="error"
-                      variant="flat"
-                      onClick={() => handleDeleteVariant(variant.id)}
-                    >
-                      <TrashIcon className="size-4" />
-                    </Button>
+                  <div className="flex items-center gap-1 flex-col">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onClick={() => startEdit(variant)}
+                        disabled={uploadingVariantId === variant.id}
+                      >
+                        <PencilIcon className="size-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="error"
+                        variant="flat"
+                        onClick={() => handleDeleteVariant(variant.id)}
+                        disabled={uploadingVariantId === variant.id}
+                      >
+                        <TrashIcon className="size-4" />
+                      </Button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleUploadVariantImage(variant.id, file);
+                          }
+                        }}
+                        disabled={uploadingVariantId === variant.id}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        disabled={uploadingVariantId === variant.id}
+                        loading={uploadingVariantId === variant.id}
+                      >
+                        <PhotoIcon className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
