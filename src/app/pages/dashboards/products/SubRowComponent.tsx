@@ -181,16 +181,6 @@ export function SubRowComponent({
               </Tr>
             </TBody>
           </Table>
-
-          <div className="mt-2 flex justify-end space-x-1.5 rtl:space-x-reverse">
-            <Tag component="button" className="min-w-[4rem]">
-              ویرایش
-            </Tag>
-
-            <Tag component="button" color="primary" className="min-w-[4rem]">
-              مشاهده
-            </Tag>
-          </div>
         </div>
       </div>
     </div>
