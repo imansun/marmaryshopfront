@@ -81,7 +81,10 @@ export function ProductImageCell({
   row,
 }: CellContext<ProductItem, unknown>) {
   const title = ensureString(row.original.title);
-  const imageUrl = resolveProductImageUrl(row.original.imageUrl);
+  
+  // Use first image from images array if available, otherwise use imageUrl
+  const primaryImageUrl = row.original.images?.[0]?.imageUrl ?? row.original.imageUrl;
+  const imageUrl = resolveProductImageUrl(primaryImageUrl);
 
   return (
     <div className="flex items-center">
@@ -147,12 +150,15 @@ export function TitleCell({
   const columnQuery = ensureString(column.getFilterValue());
   const title = ensureString(getValue());
 
+  // Use first image from images array if available, otherwise use imageUrl
+  const primaryImageUrl = row.original.images?.[0]?.imageUrl ?? row.original.imageUrl;
+
   return (
     <div className="flex items-center gap-4">
       <Avatar
         size={9}
         name={title}
-        src={resolveProductImageUrl(row.original.imageUrl)}
+        src={resolveProductImageUrl(primaryImageUrl)}
         classNames={{
           display: "mask is-squircle rounded-none text-sm",
         }}
